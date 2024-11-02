@@ -47,7 +47,7 @@ use super::encode_as_png;
 use super::{into_unknown, LinuxClipboardKind, WaitConfig};
 #[cfg(feature = "image-data")]
 use crate::ImageData;
-use crate::{common::ScopeGuard, Error};
+use crate::{common::ScopeGuard, ClipboardItem, Error};
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -940,6 +940,25 @@ impl Clipboard {
 		let encoded = encode_as_png(&image)?;
 		let data = vec![ClipboardData { bytes: encoded, format: self.inner.atoms.PNG_MIME }];
 		self.inner.write(data, selection, wait)
+	}
+
+	#[cfg(feature = "image-data")]
+	pub(crate) fn get_all(
+		&self,
+		selection: LinuxClipboardKind,
+	) -> Result<Vec<ClipboardItem<'static>>> {
+		let mut items = Vec::new();
+		if let Ok(text) = self.get_text(selection) {
+			items.push(ClipboardItem::Text(text.into()));
+		}
+		if let Ok(html) = self.get_html(selection) {
+			items.push(ClipboardItem::Html(html.into()));
+		}
+		if let Ok(png) = self.get_image(selection) {
+			items.push(ClipboardItem::ImagePng(png));
+		}
+
+		Ok(items)
 	}
 }
 

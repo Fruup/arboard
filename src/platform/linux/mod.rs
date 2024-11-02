@@ -3,9 +3,9 @@ use std::{borrow::Cow, time::Instant};
 #[cfg(feature = "wayland-data-control")]
 use log::{trace, warn};
 
-#[cfg(feature = "image-data")]
-use crate::ImageData;
 use crate::{common::private, Error};
+#[cfg(feature = "image-data")]
+use crate::{ClipboardItem, ImageData};
 
 mod x11;
 
@@ -132,8 +132,12 @@ impl<'clipboard> Get<'clipboard> {
 	}
 
 	#[cfg(feature = "image-data")]
-	pub(crate) fn all(self) -> Result<Vec<crate::ClipboardItem<'static>>, Error> {
-		todo!()
+	pub(crate) fn all(self) -> Result<Vec<ClipboardItem<'static>>, Error> {
+		match self.clipboard {
+			Clipboard::X11(clipboard) => clipboard.get_all(self.selection),
+			#[cfg(feature = "wayland-data-control")]
+			Clipboard::WlDataControl(clipboard) => todo!(),
+		}
 	}
 }
 
